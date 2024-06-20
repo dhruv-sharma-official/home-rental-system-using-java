@@ -1,0 +1,11 @@
+create database housedb;
+create table account (ownername VARCHAR(255), id INT PRIMARY KEY, designation VARCHAR(255), pass VARCHAR(255));
+insert into table account (ownername, id, designation, pass) values ("Raghav Joshi", 1, "Admin", "admin123");
+insert into table account (ownername, id, designation, pass) values ("Balram Saini", 2, "booking user", "bok123");
+
+create table houses (housenm VARCHAR(255), id INT PRIMARY KEY, address VARCHAR(255), booked boolean, isempty boolean);
+
+
+
+## after this your sql database is ready to use and the application is ready to connect
+
