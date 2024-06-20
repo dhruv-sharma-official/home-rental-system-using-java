@@ -5,7 +5,7 @@ insert into table account (ownername, id, designation, pass) values ("Balram Sai
 
 create table houses (housenm VARCHAR(255), id INT PRIMARY KEY, address VARCHAR(255), booked boolean, isempty boolean);
 
-
+create table customers (name VARCHAR(255), contact VARCHAR(10), hid INT PRIMARY KEY, aadhaar VARCHAR(12) UNIQUE NOT NULL);
 
 ## after this your sql database is ready to use and the application is ready to connect
 

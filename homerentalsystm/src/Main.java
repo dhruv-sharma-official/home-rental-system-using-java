@@ -1,39 +1,41 @@
 import java.sql.*;
+import java.util.ArrayList;
 import java.util.Scanner;
+import java.util.List;
 //
-//class createhouse{
-//    private String housenm;
-//    private int id;
-//    private String addr;
-//    private boolean booked;
-//    private boolean isempty;
-//
-//    void house(String housenm, int id, String addr, boolean booked, boolean isempty){
-//        this.housenm = housenm;
-//        this.id = id;
-//        this.addr = addr;
-//        this.booked = booked;
-//        this.isempty = isempty;
-//    }
-//    public String gethnm(){
-//        return this.housenm;
-//    }
-//    public int getid(){
-//        return this.id;
-//    }
-//    public String getaddr(){
-//        return this.addr;
-//    }
-//    public boolean booked(){
-//        return this.booked;
-//    }
-//    public boolean getisempty(){
-//        return this.isempty;
-//    }
-//
-//    public void display(){
-//        System.out.println("---------------\n"+"House: "+ housenm + "\nId: "+ id + "\naddress: "+ addr+ "\nbooked: "+booked+"\nVacant: "+isempty);
-//    }
+class housedata{
+    private String housenm;
+    private int id;
+    private String addr;
+    private boolean booked;
+    private boolean isempty;
+
+    public housedata(String housenm, int id, String addr, boolean booked, boolean isempty){
+        this.housenm = housenm;
+        this.id = id;
+        this.addr = addr;
+        this.booked = booked;
+        this.isempty = isempty;
+    }
+    public String gethnm(){
+        return this.housenm;
+    }
+    public int getid(){
+        return this.id;
+    }
+    public String getaddr(){
+        return this.addr;
+    }
+    public boolean booked(){
+        return this.booked;
+    }
+    public boolean getisempty(){
+        return this.isempty;
+    }
+
+    public void display(){
+        System.out.println("---------------\n"+"House: "+ housenm + "\nId: "+ id + "\naddress: "+ addr+ "\nbooked: "+booked+"\nVacant: "+isempty);
+    }
 
 
 }
@@ -65,6 +67,72 @@ class house {
         }
     }
 
+    public static void fetchunbookedhousedetails(){
+        List<housedata> h = new ArrayList<>();
+        String query = "SELECT * FROM houses where booked = false and isempty = true";
+        try (Connection connection = DriverManager.getConnection(url, uname, pass);
+             PreparedStatement preparedStatement = connection.prepareStatement(query)) {
+            ResultSet resultSet = preparedStatement.executeQuery();
+            while (resultSet.next()) {
+                String name = resultSet.getString("housenm");
+                String address = resultSet.getString("address");
+                Boolean booked = resultSet.getBoolean("booked");
+                Boolean isempty = resultSet.getBoolean("isempty");
+                System.out.println("\nHouse name: "+name+"\naddress: "+address+"\nbooked: "+booked+"\nVacant: "+isempty);
+
+            }
+
+
+        } catch (SQLException e) {
+            e.printStackTrace();
+        }
+    }
+
+
+
+    public static void listallhouses(){
+        List<housedata> h = new ArrayList<>();
+        String query = "SELECT * FROM houses;";
+        try (Connection connection = DriverManager.getConnection(url, uname, pass);
+             PreparedStatement preparedStatement = connection.prepareStatement(query)) {
+            ResultSet resultSet = preparedStatement.executeQuery();
+            while (resultSet.next()) {
+                String name = resultSet.getString("housenm");
+                String address = resultSet.getString("address");
+                Boolean booked = resultSet.getBoolean("booked");
+                Boolean isempty = resultSet.getBoolean("isempty");
+                int id = resultSet.getInt("id");
+                System.out.println("\nHouse name: "+name+"\nid: "+id+"\naddress: "+address+"\nbooked: "+booked+"\nVacant: "+isempty);
+
+            }
+
+
+        } catch (SQLException e) {
+            e.printStackTrace();
+        }
+    }
+
+
+
+    public static void fetchvacanthousedetails(){
+        String query = "SELECT * FROM houses where isempty = true";
+        try (Connection connection = DriverManager.getConnection(url, uname, pass);
+             PreparedStatement preparedStatement = connection.prepareStatement(query)) {
+            ResultSet resultSet = preparedStatement.executeQuery();
+            while (resultSet.next()) {
+                String name = resultSet.getString("housenm");
+                String address = resultSet.getString("address");
+                Boolean booked = resultSet.getBoolean("booked");
+                Boolean isempty = resultSet.getBoolean("isempty");
+                System.out.println("\nHouse name: "+name+"\naddress: "+address+"\nbooked: "+booked+"\nVacant: "+isempty);
+            }
+
+
+        } catch (SQLException e) {
+            e.printStackTrace();
+        }
+    }
+
 
 
     public static void gethousebyid(int id) {
@@ -78,7 +146,7 @@ class house {
                         String address = resultSet.getString("address");
                         Boolean booked = resultSet.getBoolean("booked");
                         Boolean isempty = resultSet.getBoolean("isempty");
-                        System.out.println("\nHouse name: "+name+"\naddress: "+address+"\nbooked: "+booked+"Vacant: "+isempty);
+                        System.out.println("\nHouse name: "+name+"\naddress: "+address+"\nbooked: "+booked+"\nVacant: "+isempty);
                     }
 
 
@@ -251,14 +319,51 @@ public class Main extends house{
             else if (login == 1){
                 while(login == 1) {
                     String un = account.fetchuname(1);
-                    System.out.println("User: "+un);
-                    System.out.println("\n0 -> Back \n1 -> add residence \n2 -> book house \n3 -> delete residence\n");
+                    System.out.println("#############################################\nUser: "+un);
+                    System.out.println("\n0 -> Back \n1 -> add residence \n2 -> booking \n3 -> delete residence\n");
                     inp = sc.nextInt();
                     if (inp == 0) {
                         System.out.println("Logging out");
                         login = 0;
                     } else if (inp == 1) {
                         addhouse();
+                    } else if (inp == 2){
+                        System.out.println("\n0 -> back \n1 -> update booking \n2 -> new booking");
+                        inp = sc.nextInt();
+                        if (inp == 0){
+                            System.out.println(" <back> ");
+                        } else if (inp == 1){
+                            System.out.println("\n1 -> list unbooked houses \n2 -> list vacant houses \n3 -> list all houses\n4 -> list house by id\n5 -> book house by id\n6 -> unbook house / vacant house by id\n7 -> allot house by id");
+                            inp = sc.nextInt();
+                            if (inp == 1){
+                                fetchunbookedhousedetails();
+                            } else if (inp == 2){
+                                fetchvacanthousedetails();
+                            }else if (inp == 3){
+                                listallhouses();
+                            } else if (inp == 4){
+                                System.out.println("enter house id: ");
+                                int id = sc.nextInt();
+                                gethousebyid(id);
+                            } else if (inp == 5){
+                                int id = sc.nextInt();
+                                updatehouse(id, true,true);
+                            } else if (inp == 6) {
+                                int id = sc.nextInt();
+                                updatehouse(id, false, true);
+                            } else if (inp == 7){
+                                int id = sc.nextInt();
+                                updatehouse(id, false, false);
+
+                            } else {
+                                System.out.println("invalid input");
+                            }
+                        }else if (inp == 2){
+                            System.out.println("");
+
+                        }
+
+
                     } else if (inp == 3) {
                         delhouse();
                     } else {
