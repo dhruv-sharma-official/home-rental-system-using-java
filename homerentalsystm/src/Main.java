@@ -1,8 +1,13 @@
 import java.sql.*;
+import java.time.format.DateTimeFormatter;
 import java.util.ArrayList;
 import java.util.Scanner;
 import java.util.List;
-//
+import java.time.LocalDateTime;
+
+
+// house data from here ========================================================
+
 class housedata{
     private String housenm;
     private int id;
@@ -39,7 +44,83 @@ class housedata{
 
 
 }
-class house {
+
+// customer here =============================================================
+class customer{
+    private String customer_name;
+    private long customer_contact;
+    private long customer_aadhar;
+    private int hid;
+    private boolean running;
+    private String checkin;
+    private String checkout;
+    public void customerdata (String cname, long ccontact, long caadhar, int hid, boolean runn, String checkn, String checkot){
+        this.customer_name = cname;
+        this.customer_contact = ccontact;
+        this.customer_aadhar = caadhar;
+        this.hid = hid;
+        this.running = runn;
+        this.checkin = checkn;
+        this.checkout = checkot;
+    }
+}
+
+class cust{
+
+    private static final String url = "jdbc:mysql://localhost:3306/housedb";
+    private static final String uname = "root";
+    private static final String pass = "kali";
+    public static void createcustomer(String name, long contact, long aadhar, int hid, boolean runn, String checkin, String checkout){
+        String query = "Insert into customers (name, contact, hid, aadhaar, running, checkin, checkout) values (?,?,?,?,?,?,?)";
+        try (Connection con = DriverManager.getConnection(url, uname, pass);
+             PreparedStatement preparedStatement = con.prepareStatement(query)){
+            preparedStatement.setString(1, name);
+            preparedStatement.setLong(2,contact);
+            preparedStatement.setInt(3, hid);
+            preparedStatement.setLong(4, aadhar);
+            preparedStatement.setBoolean(5, runn);
+            preparedStatement.setString(6, checkin);
+            preparedStatement.setString(7, checkout);
+            preparedStatement.executeUpdate();
+            System.out.println("Updated");
+        } catch (SQLException e) {
+            if(e.getSQLState().startsWith("23")){
+                System.out.println("Error: customer with aadhar "+aadhar+" already exists");
+            } else {
+                e.printStackTrace();
+            }
+        }
+    }
+    public static void fetchcustomerwithcontact(long contact){
+        String query = "SELECT * FROM customers where contact = ?";
+        try (Connection connection = DriverManager.getConnection(url, uname, pass);
+             PreparedStatement preparedStatement = connection.prepareStatement(query)){
+            preparedStatement.setLong(1, contact);
+            ResultSet resultSet = preparedStatement.executeQuery();
+            if (resultSet.next()){
+                String name = resultSet.getString("name");
+                int hid = resultSet.getInt("hid");
+                long aadhar = resultSet.getLong("aadhaar");
+                boolean running = resultSet.getBoolean("running");
+                String checkin = resultSet.getString("checkin");
+                String checkout = resultSet.getString("checkout");
+                System.out.println("\nCustomer name: "+name+"\nContact: "+contact+"\nHouse id: "+hid+"\naadhaar: "
+                        +aadhar+"\nCustomer Status Online: "+running+"\nCheckin: "+checkin+"\nCheckout: "+checkout);
+
+
+            }
+        } catch (SQLException e){
+            System.out.println(e);
+        }
+
+    }
+}
+
+
+// house from here ================================================================
+
+
+class house extends cust{
     private static final String url = "jdbc:mysql://localhost:3306/housedb";
     private static final String uname = "root";
     private static final String pass = "kali";
@@ -197,6 +278,9 @@ class house {
 }
 
 
+// =================================== accounts from here ==========================
+
+
 class account{
 
     String ownername;
@@ -270,13 +354,17 @@ class account{
 
 }
 
-
+// ==============================================main code executes from here====================
 
 public class Main extends house{
 
     public static void main(String[] args){
         boolean run = true;
         int login = 0;
+        LocalDateTime currentdatetime = LocalDateTime.now();
+        DateTimeFormatter formatter = DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss");
+        String startuptime = currentdatetime.format(formatter);
+        System.out.println("System Started at "+startuptime);
         while (run) {
 
             System.out.println("############### Welcome to Home Rental System #############");
@@ -320,7 +408,7 @@ public class Main extends house{
                 while(login == 1) {
                     String un = account.fetchuname(1);
                     System.out.println("#############################################\nUser: "+un);
-                    System.out.println("\n0 -> Back \n1 -> add residence \n2 -> booking \n3 -> delete residence\n");
+                    System.out.println("\n0 -> Back \n1 -> add residence \n2 -> activities \n3 -> delete residence\n");
                     inp = sc.nextInt();
                     if (inp == 0) {
                         System.out.println("Logging out");
@@ -328,14 +416,16 @@ public class Main extends house{
                     } else if (inp == 1) {
                         addhouse();
                     } else if (inp == 2){
-                        System.out.println("\n0 -> back \n1 -> update booking \n2 -> new booking");
+                        System.out.println("\n0 -> back \n1 -> view activities \n2 -> new booking");
                         inp = sc.nextInt();
                         if (inp == 0){
                             System.out.println(" <back> ");
                         } else if (inp == 1){
-                            System.out.println("\n1 -> list unbooked houses \n2 -> list vacant houses \n3 -> list all houses\n4 -> list house by id\n5 -> book house by id\n6 -> unbook house / vacant house by id\n7 -> allot house by id");
+                            System.out.println("\n0 -> back \n1 -> list unbooked houses \n2 -> list vacant houses \n3 -> list all houses\n4 -> list house by id\n5 -> book house by id\n6 -> unbook house / vacant house by id\n7 -> allot house by id");
                             inp = sc.nextInt();
-                            if (inp == 1){
+                            if (inp == 0){
+                                System.out.println("back");
+                            }else if (inp == 1){
                                 fetchunbookedhousedetails();
                             } else if (inp == 2){
                                 fetchvacanthousedetails();
@@ -371,24 +461,24 @@ public class Main extends house{
                     }
                 }
             } else if (login == 2){
-                System.out.println("booking yet to be added");
-                login = 0;
+                System.out.println("booking on work");
+                while (login == 2){
+                    System.out.println("\n0 -> Log out \n1 -> add customer");
+                    inp = sc.nextInt();
+                    if (inp == 0){
+                        System.out.println("Logging out");
+                        login = 0;
+                    } else if (inp == 1){
+                        addcustomer();
+                    }
+                }
 
             } else {
                 System.out.println("user account error occured");
                 login = 0;
             }
         }
-
         System.out.println("Closing Home Rental System");
-//        house h = house.gethousebyid(2);
-//        if (h != null) {
-//            h.display();
-//        } else {
-//            System.out.println("no data found");
-//        }
-
-
     }
 
     public static void addhouse(){
@@ -398,6 +488,7 @@ public class Main extends house{
         System.out.println("Enter house id: ");
         int id = sc.nextInt();
         System.out.println("Enter house address:");
+        sc.nextLine();
         String address = sc.nextLine();
         createhouse(name, id, address, false, true);
     }
@@ -406,6 +497,35 @@ public class Main extends house{
         System.out.println("Enter house ID for deletion: ");
         int id = sc.nextInt();
         deletehouse(id);
+    }
+    public static void bookhousebyid(){
+        Scanner sc = new Scanner(System.in);
+        System.out.println("Enter House id:");
+        int hid = sc.nextInt();
+        System.out.println("Enter Customer id:");
+        int cid = sc.nextInt();
+        updatehouse(hid, true, false);
+
+    }
+    public static void vacanthouse(){
+        Scanner sc = new Scanner(System.in);
+        int hid = sc.nextInt();
+    }
+    public static void allothouse(){
+        Scanner sc = new Scanner(System.in);
+        int hid = sc.nextInt();
+    }
+    public static void addcustomer(){
+        Scanner sc = new Scanner(System.in);
+        System.out.println("Enter Customer name:");
+        String name = sc.nextLine();
+        System.out.println("Enter Contact No:");
+        long contact = sc.nextLong();
+        System.out.println("Enter House Id:");
+        int hid = sc.nextInt();
+        System.out.println("Enter aadhaar card no:");
+        long aadhaar = sc.nextLong();
+        createcustomer(name, contact, aadhaar, hid, true, "not yet", "not yet");
     }
 
 
