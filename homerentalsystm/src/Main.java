@@ -71,7 +71,7 @@ class cust{
     private static final String uname = "root";
     private static final String pass = "kali";
     public static void createcustomer(String name, long contact, long aadhar, int hid, boolean runn, String checkin, String checkout){
-        String query = "Insert into customers (name, contact, hid, aadhaar, running, checkin, checkout) values (?,?,?,?,?,?,?)";
+        String query = "Insert into customer (name, contact, hid, aadhaar, running, checkin, checkout) values (?,?,?,?,?,?,?)";
         try (Connection con = DriverManager.getConnection(url, uname, pass);
              PreparedStatement preparedStatement = con.prepareStatement(query)){
             preparedStatement.setString(1, name);
@@ -92,7 +92,7 @@ class cust{
         }
     }
     public static void fetchcustomerwithcontact(long contact){
-        String query = "SELECT * FROM customers where contact = ?";
+        String query = "SELECT * FROM customer where contact = ?";
         try (Connection connection = DriverManager.getConnection(url, uname, pass);
              PreparedStatement preparedStatement = connection.prepareStatement(query)){
             preparedStatement.setLong(1, contact);
@@ -113,6 +113,55 @@ class cust{
             System.out.println(e);
         }
 
+    }
+
+    public static void bookhousewithcust(long aadhaar, int hbid){
+        String query = "SELECT * FROM houses where id = ?";
+        boolean booked = false;
+        boolean isempty = true;
+        try (Connection connection = DriverManager.getConnection(url, uname, pass);
+             PreparedStatement preparedStatement = connection.prepareStatement(query)){
+            preparedStatement.setLong(1, hbid);
+            ResultSet resultSet = preparedStatement.executeQuery();
+            if (resultSet.next()){
+                booked = resultSet.getBoolean("booked");
+                isempty = resultSet.getBoolean("isempty");
+            }
+        } catch (SQLException e){
+            System.out.println(e);
+        }
+        if (booked == false && isempty == true) {
+            String quer= "UPDATE customer SET running = ?, hid = ? WHERE aadhaar = ?";
+            try (Connection connection = DriverManager.getConnection(url, uname, pass);
+                 PreparedStatement preparedStatement = connection.prepareStatement(quer)) {
+                preparedStatement.setBoolean(1, true);
+                preparedStatement.setInt(2, hbid);
+                preparedStatement.setLong(3, aadhaar);
+                preparedStatement.executeUpdate();
+            } catch (SQLException e) {
+                System.out.println(e);
+            }
+        } else {
+            System.out.println("the house is either booked or occupied by someone\ntry with another house");
+        }
+
+
+    }
+    public static void allocatehousetocust(int hid, long aadhaar){
+        LocalDateTime currentdatetime = LocalDateTime.now();
+        DateTimeFormatter formatter = DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss");
+        String startuptime = currentdatetime.format(formatter);
+
+        String q= "UPDATE customer SET running = ?, checkin = ? WHERE aadhaar = ?";
+        try (Connection connection = DriverManager.getConnection(url, uname, pass);
+             PreparedStatement preparedStatement = connection.prepareStatement(q)) {
+            preparedStatement.setBoolean(1, true);
+            preparedStatement.setString(2, startuptime);
+            preparedStatement.setLong(3, aadhaar);
+            preparedStatement.executeUpdate();
+        } catch (SQLException e) {
+            System.out.println(e);
+        }
     }
 }
 
@@ -416,12 +465,12 @@ public class Main extends house{
                     } else if (inp == 1) {
                         addhouse();
                     } else if (inp == 2){
-                        System.out.println("\n0 -> back \n1 -> view activities \n2 -> new booking");
+                        System.out.println("\n0 -> back \n1 -> view activities \n2 -> booking options \n3 -> customer options");
                         inp = sc.nextInt();
                         if (inp == 0){
                             System.out.println(" <back> ");
                         } else if (inp == 1){
-                            System.out.println("\n0 -> back \n1 -> list unbooked houses \n2 -> list vacant houses \n3 -> list all houses\n4 -> list house by id\n5 -> book house by id\n6 -> unbook house / vacant house by id\n7 -> allot house by id");
+                            System.out.println("\n0 -> back \n1 -> list unbooked houses \n2 -> list vacant houses \n3 -> list all houses\n4 -> list house by id\n** Force Operations **\n5 -> book house by id\n6 -> unbook house / vacant house by id\n7 -> allot house by id");
                             inp = sc.nextInt();
                             if (inp == 0){
                                 System.out.println("back");
@@ -436,21 +485,43 @@ public class Main extends house{
                                 int id = sc.nextInt();
                                 gethousebyid(id);
                             } else if (inp == 5){
-                                int id = sc.nextInt();
-                                updatehouse(id, true,true);
+                                bookhousewithcust();
                             } else if (inp == 6) {
-                                int id = sc.nextInt();
-                                updatehouse(id, false, true);
+                                vacanthouse();
                             } else if (inp == 7){
-                                int id = sc.nextInt();
-                                updatehouse(id, false, false);
+                                allothouse();
 
                             } else {
                                 System.out.println("invalid input");
                             }
-                        }else if (inp == 2){
-                            System.out.println("");
 
+                        }else if (inp == 2){
+                            System.out.println("**booking options**\n0 -> back\n1 -> add customer\n2 -> book house\n3 -> allot house");
+                            inp = sc.nextInt();
+                            if (inp == 0){
+                                System.out.println("Back");
+                            } else if (inp == 1){
+                                addcustomer();
+                            } else if (inp == 2){
+                                bookhousewithcust();
+                            } else if (inp == 3){
+                                allothouse();
+                            } else {
+                                System.out.println("Invalid input");
+                            }
+
+                        } else if (inp == 3){
+                            System.out.println("*** customer options ***\n0 -> back\n1 -> Search customer with contact\n2 -> Add customer");
+                            inp = sc.nextInt();
+                            if (inp == 0){
+                                System.out.println("back");
+                            } else if (inp == 1){
+                                getcustomer();
+                            } else if (inp == 2){
+                                addcustomer();
+                            }
+                        } else {
+                            System.out.println("invalid input");
                         }
 
 
@@ -463,13 +534,38 @@ public class Main extends house{
             } else if (login == 2){
                 System.out.println("booking on work");
                 while (login == 2){
-                    System.out.println("\n0 -> Log out \n1 -> add customer");
+                    System.out.println("\n0 -> Log out \n1 -> booking options\n2 -> customer options");
                     inp = sc.nextInt();
                     if (inp == 0){
                         System.out.println("Logging out");
                         login = 0;
                     } else if (inp == 1){
-                        addcustomer();
+                        System.out.println("**booking options**\n0 -> back\n1 -> add customer\n2 -> book house\n3 -> allot house");
+                        inp = sc.nextInt();
+                        if (inp == 0){
+                            System.out.println("Back");
+                        } else if (inp == 1){
+                            addcustomer();
+                        } else if (inp == 2){
+                            bookhousewithcust();
+                        }  else if (inp == 3){
+                            allothouse();
+                        } else {
+                            System.out.println("Invalid input");
+                        }
+
+                    } else if (inp == 2){
+                        System.out.println("*** customer options ***\n0 -> back\n1 -> Search customer with contact\n2 -> Add customer");
+                        inp = sc.nextInt();
+                        if (inp == 0){
+                            System.out.println("back");
+                        } else if (inp == 1){
+                            getcustomer();
+                        } else if (inp == 2){
+                            addcustomer();
+                        }
+                    } else {
+                        System.out.println("invalid input");
                     }
                 }
 
@@ -497,24 +593,18 @@ public class Main extends house{
         System.out.println("Enter house ID for deletion: ");
         int id = sc.nextInt();
         deletehouse(id);
-    }
-    public static void bookhousebyid(){
-        Scanner sc = new Scanner(System.in);
-        System.out.println("Enter House id:");
-        int hid = sc.nextInt();
-        System.out.println("Enter Customer id:");
-        int cid = sc.nextInt();
-        updatehouse(hid, true, false);
 
+        System.out.println("operation successful");
     }
     public static void vacanthouse(){
         Scanner sc = new Scanner(System.in);
+        System.out.println("Enter houseid: ");
         int hid = sc.nextInt();
+        updatehouse(hid, false, true);
+        System.out.println("operation successful");
+
     }
-    public static void allothouse(){
-        Scanner sc = new Scanner(System.in);
-        int hid = sc.nextInt();
-    }
+
     public static void addcustomer(){
         Scanner sc = new Scanner(System.in);
         System.out.println("Enter Customer name:");
@@ -527,7 +617,30 @@ public class Main extends house{
         long aadhaar = sc.nextLong();
         createcustomer(name, contact, aadhaar, hid, true, "not yet", "not yet");
     }
+    public static void getcustomer(){
+        Scanner sc = new Scanner(System.in);
+        System.out.println("Enter customer Contact: ");
+        long con = sc.nextLong();
+        fetchcustomerwithcontact(con);
+    }
+    public static void bookhousewithcust(){
+        Scanner sc = new Scanner(System.in);
+        System.out.println("Enter customer's aadhar: ");
+        long adh = sc.nextLong();
+        System.out.println("Enter house id: ");
+        int hid = sc.nextInt();
+        bookhousewithcust(adh, hid);
+        System.out.println("house booked");
+    }
+    public static void allothouse(){
+        Scanner sc = new Scanner(System.in);
+        System.out.println("Enter customer's aadhaar:");
+        long adh = sc.nextLong();
+        System.out.println("Enter house id: ");
+        int hid = sc.nextInt();
+        allocatehousetocust(hid, adh);
+        System.out.println("house allotted to "+adh);
+    }
 
 
 }
-
